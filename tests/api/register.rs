@@ -39,7 +39,7 @@ async fn register_returns_a_200_for_valid_request_body() {
     let saved = sqlx::query!("SELECT applicant_name, nuid FROM applicants",)
         .fetch_one(&app.db_pool)
         .await
-        .expect("Failed to fetch saved subscription.");
+        .expect("Failed to fetch saved applicant.");
 
     assert_eq!(saved.applicant_name, "Garrett");
     assert_eq!(saved.nuid, "001234567");

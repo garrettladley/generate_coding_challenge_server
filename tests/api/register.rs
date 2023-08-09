@@ -27,6 +27,8 @@ async fn register_returns_a_200_for_valid_request_body() {
     assert!(response_json["token"].is_string());
     assert!(response_json["challenge"].is_array());
 
+    assert!(!response_json["token"].as_str().unwrap().is_empty());
+
     let num_mandatory = 7;
     let num_random = 100;
     assert_eq!(

@@ -1,1 +1,0 @@
-# generate_coding_challenge_server

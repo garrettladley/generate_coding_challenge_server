@@ -67,13 +67,20 @@ async fn forgot_token_returns_a_400_for_invalid_nuid() {
 
     assert_eq!(200, response.status().as_u16());
 
+    let bad_nuid = "a".repeat(9);
+
     let response = client
-        .get(&format!("{}/forgot_token/{}", &app.address, "a".repeat(9)))
+        .get(&format!("{}/forgot_token/{}", &app.address, &bad_nuid))
         .send()
         .await
         .expect("Failed to execute request.");
 
     assert_eq!(400, response.status().as_u16());
+    let expected: serde_json::Value =
+        serde_json::from_str(&format!("\"Invalid NUID! Given: {}\"", &bad_nuid)).unwrap();
+    let actual: serde_json::Value =
+        serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
+    assert_eq!(expected, actual);
 }
 
 #[tokio::test]
@@ -96,11 +103,22 @@ async fn forgot_token_returns_a_404_for_nuid_that_does_not_exist_in_db() {
 
     assert_eq!(200, response.status().as_u16());
 
+    let bad_nuid = "0".repeat(9);
+
     let response = client
-        .get(&format!("{}/forgot_token/{}", &app.address, "0".repeat(9)))
+        .get(&format!("{}/forgot_token/{}", &app.address, &bad_nuid))
         .send()
         .await
         .expect("Failed to execute request.");
 
     assert_eq!(404, response.status().as_u16());
+
+    let expected: serde_json::Value = serde_json::from_str(&format!(
+        "\"Record associated with given NUID not found! NUID: {}\"",
+        &bad_nuid
+    ))
+    .unwrap();
+    let actual: serde_json::Value =
+        serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
+    assert_eq!(expected, actual);
 }

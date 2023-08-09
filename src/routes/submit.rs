@@ -52,7 +52,11 @@ pub async fn submit(
 ) -> HttpResponse {
     let token = match uuid::Uuid::parse_str(&token.into_inner()) {
         Ok(token) => token,
-        Err(_) => return HttpResponse::BadRequest().json("Invalid token"),
+        Err(token) => {
+            tracing::error!("Invalid token! Given: \"{:?}\"", token);
+            return HttpResponse::BadRequest()
+                .json(format!("Invalid token! Given: \"{:?}\"", token));
+        }
     };
 
     let solution_to_be_checked = match retrieve_solution(&pool, &token).await {
@@ -68,7 +72,10 @@ pub async fn submit(
         }
         Err(sqlx::Error::RowNotFound) => {
             tracing::error!("Row not found: {:?}", token);
-            return HttpResponse::NotFound().finish();
+            return HttpResponse::NotFound().json(format!(
+                "Record associated with given token not found! Token: {}",
+                token
+            ));
         }
         Err(e) => {
             tracing::error!("Failed to execute query: {:?}", e);

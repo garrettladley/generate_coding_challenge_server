@@ -3,6 +3,12 @@ use unicode_segmentation::UnicodeSegmentation;
 #[derive(Debug)]
 pub struct Nuid(String);
 
+impl std::fmt::Display for Nuid {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.as_str())
+    }
+}
+
 impl Nuid {
     pub fn parse(s: String) -> Result<Nuid, String> {
         let is_empty_or_whitespace = s.trim().is_empty();
@@ -12,7 +18,7 @@ impl Nuid {
         let all_integers = s.chars().all(|c| c.is_ascii_digit());
 
         if is_empty_or_whitespace || is_too_long || !all_integers {
-            Err(format!("{} is not a valid NUID.", s))
+            Err(format!("Invalid NUID! Given: {}", s))
         } else {
             Ok(Self(s))
         }

@@ -65,7 +65,7 @@ async fn register_returns_a_400_when_request_body_properties_are_missing() {
         (hashmap! {}, "missing both name and nuid"),
     ];
 
-    for (invalid_body, error_message) in test_cases {
+    for (invalid_body, reason) in test_cases {
         let response = client
             .post(&format!("{}/register", &app.address))
             .json(&invalid_body)
@@ -76,8 +76,8 @@ async fn register_returns_a_400_when_request_body_properties_are_missing() {
         assert_eq!(
             400,
             response.status().as_u16(),
-            "The API did not fail with 400 Bad Request when the payload was {}.",
-            error_message
+            "The API did not fail with 400 Bad Request when {}.",
+            reason,
         );
     }
 }
@@ -92,21 +92,21 @@ async fn register_returns_a_400_when_fields_are_present_but_invalid() {
                 "name" => "",
                 "nuid" => "001234567",
             },
-            "empty name",
+            "Invalid name! Given: ",
         ),
         (
             hashmap! {
                 "name" => "Garrett",
                 "nuid" => "",
             },
-            "empty nuid",
+            "Invalid NUID! Given: ",
         ),
         (
             hashmap! {
                 "name" => "",
                 "nuid" => "",
             },
-            "empty name and nuid",
+            "Invalid name! Given: ",
         ),
     ];
 
@@ -124,5 +124,10 @@ async fn register_returns_a_400_when_fields_are_present_but_invalid() {
             "The API did not fail with 400 Bad Request when the payload was {}.",
             error_message
         );
+        let expected: serde_json::Value =
+            serde_json::from_str(&format!("\"{}\"", error_message)).unwrap();
+        let actual: serde_json::Value =
+            serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
+        assert_eq!(expected, actual);
     }
 }

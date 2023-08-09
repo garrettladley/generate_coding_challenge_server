@@ -1,4 +1,3 @@
-
 use actix_web::{web, HttpResponse};
 use sqlx::{query, PgPool};
 
@@ -11,19 +10,26 @@ pub struct ResponseData {
     name = "Forgot challenge.",
     skip(token, pool),
     fields(
-        applicant_token = %token    
+        applicant_token = %token
     )
 )]
 pub async fn challenge(token: web::Path<String>, pool: web::Data<PgPool>) -> HttpResponse {
     let token = match uuid::Uuid::parse_str(&token) {
         Ok(token) => token,
-        Err(_) => return HttpResponse::BadRequest().json("Invalid token"),
+        Err(_) => {
+            tracing::error!("Invalid token! Given: {}", token);
+            return HttpResponse::BadRequest().json(format!("Invalid token! Given: {}", token));
+        }
     };
     match retrieve_challenge(&pool, &token).await {
         Ok(response_data) => HttpResponse::Ok().json(response_data),
         Err(sqlx::Error::RowNotFound) => {
             tracing::error!("Row not found: {:?}", token);
-            HttpResponse::NotFound().finish()},
+            HttpResponse::NotFound().json(format!(
+                "Record associated with given token not found! Token: {}",
+                token
+            ))
+        }
         Err(e) => {
             tracing::error!("Failed to execute query: {:?}", e);
             HttpResponse::InternalServerError().finish()
@@ -35,7 +41,10 @@ pub async fn challenge(token: web::Path<String>, pool: web::Data<PgPool>) -> Htt
     name = "Fetching applicant challenge from the database.",
     skip(token, pool)
 )]
-pub async fn retrieve_challenge(pool: &PgPool, token: &uuid::Uuid) -> Result<ResponseData, sqlx::Error> {
+pub async fn retrieve_challenge(
+    pool: &PgPool,
+    token: &uuid::Uuid,
+) -> Result<ResponseData, sqlx::Error> {
     let record = query!(r#"SELECT challenge FROM applicants WHERE token=$1"#, token)
         .fetch_one(pool)
         .await

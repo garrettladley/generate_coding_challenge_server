@@ -59,16 +59,21 @@ async fn challenge_returns_a_400_for_invalid_uuid() {
 
     assert_eq!(200, response.status().as_u16());
 
+    let bad_token = "67e55044-10b1-426f-9247-bb680e5fe0c80123456789";
+
     let response = client
-        .get(&format!(
-            "{}/challenge/{}",
-            &app.address, "67e55044-10b1-426f-9247-bb680e5fe0c80123456789"
-        ))
+        .get(&format!("{}/challenge/{}", &app.address, &bad_token))
         .send()
         .await
         .expect("Failed to execute request.");
 
     assert_eq!(400, response.status().as_u16());
+
+    let expected: serde_json::Value =
+        serde_json::from_str(&format!("\"Invalid token! Given: {}\"", &bad_token)).unwrap();
+    let actual: serde_json::Value =
+        serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
+    assert_eq!(expected, actual);
 }
 
 #[tokio::test]
@@ -89,14 +94,22 @@ async fn challenge_returns_a_404_for_token_that_does_not_exist_in_db() {
 
     assert_eq!(200, response.status().as_u16());
 
+    let bad_token = "67e55044-10b1-426f-9247-bb680e5fe0c8";
+
     let response = client
-        .get(&format!(
-            "{}/challenge/{}",
-            &app.address, "67e55044-10b1-426f-9247-bb680e5fe0c8"
-        ))
+        .get(&format!("{}/challenge/{}", &app.address, &bad_token))
         .send()
         .await
         .expect("Failed to execute request.");
 
     assert_eq!(404, response.status().as_u16());
+
+    let expected: serde_json::Value = serde_json::from_str(&format!(
+        "\"Record associated with given token not found! Token: {}\"",
+        &bad_token
+    ))
+    .unwrap();
+    let actual: serde_json::Value =
+        serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
+    assert_eq!(expected, actual);
 }

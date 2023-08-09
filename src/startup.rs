@@ -1,4 +1,4 @@
-use crate::routes::{health_check, register};
+use crate::routes::{challenge, forgot_token, health_check, register, submit};
 use actix_web::{dev::Server, web, App, HttpServer};
 use sqlx::PgPool;
 use std::net::TcpListener;
@@ -11,6 +11,9 @@ pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Er
             .wrap(TracingLogger::default())
             .route("/health_check", web::get().to(health_check))
             .route("/register", web::post().to(register))
+            .route("/forgot_token/{nuid}", web::get().to(forgot_token))
+            .route("/challenge/{token}", web::get().to(challenge))
+            .route("/submit/{token}", web::post().to(submit))
             .app_data(db_pool.clone())
     })
     .listen(listener)?

@@ -10,6 +10,6 @@ CREATE TABLE IF NOT EXISTS applicants (
 CREATE TABLE IF NOT EXISTS submissions (
     submission_id serial PRIMARY KEY,
     nuid varchar NOT NULL REFERENCES applicants (nuid),
-    ok boolean NOT NULL,
+    correct boolean NOT NULL,
     submission_time timestamp with time zone NOT NULL
 );

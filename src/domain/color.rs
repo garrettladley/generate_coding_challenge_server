@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-#[derive(strum::EnumIter)]
+#[derive(strum::EnumIter, PartialEq, std::fmt::Debug, Clone, Copy)]
 pub enum Color {
     Red,
     Orange,

@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT challenge FROM applicants WHERE token=$1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "challenge",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "2ec5676a3c7c9f956a3e2de760b6535efbbbe6ad8faa385dc8f5f9bcbb5d3fcb"
+}

@@ -76,9 +76,9 @@ pub fn generate_challenge(
 
     let answers: Vec<String> = all_cases
         .iter()
-        .filter(|case| one_edit_away(case))
-        .cloned()
-        .collect();
+        .filter_map(|case| one_edit_away(case))
+        .map(|color| color.to_string())
+        .collect::<Vec<String>>();
 
     (all_cases, answers)
 }
@@ -115,10 +115,9 @@ fn n_edits_away(str1: &str, str2: &str, n: isize) -> bool {
     edit_count <= n
 }
 
-fn one_edit_away(str: &str) -> bool {
-    Color::iter().any(|color| n_edits_away(str, color.to_string().as_str(), 1))
+pub fn one_edit_away(str: &str) -> Option<Color> {
+    Color::iter().find(|&color| n_edits_away(str, color.to_string().as_str(), 1))
 }
-
 #[cfg(test)]
 mod tests {
 
@@ -144,15 +143,15 @@ mod tests {
 
         assert_eq!(cases.len(), n_mandatory + n_random);
 
-        assert!(answers.iter().all(|answer| one_edit_away(answer)));
+        assert!(answers.iter().all(|answer| one_edit_away(answer).is_some()));
     }
 
     #[test]
     fn test_one_edit_away_example() {
-        assert!(one_edit_away("red"));
-        assert!(one_edit_away("lue"));
-        assert!(!one_edit_away("ooran"));
-        assert!(!one_edit_away("abc"));
-        assert!(one_edit_away("greene"));
+        assert_eq!(one_edit_away("red").unwrap(), Color::Red);
+        assert_eq!(one_edit_away("lue").unwrap(), Color::Blue);
+        assert!(one_edit_away("ooran").is_none());
+        assert!(one_edit_away("abc").is_none());
+        assert_eq!(one_edit_away("greene").unwrap(), Color::Green);
     }
 }

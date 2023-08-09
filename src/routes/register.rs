@@ -40,7 +40,7 @@ pub struct ResponseData {
 pub async fn register(body: web::Json<BodyData>, pool: web::Data<PgPool>) -> HttpResponse {
     let register_applicant = match body.0.try_into() {
         Ok(register_applicant) => register_applicant,
-        Err(_) => return HttpResponse::BadRequest().finish(),
+        Err(_) => return HttpResponse::BadRequest().json("Invalid name or NUID"),
     };
     match insert_applicant(&pool, &register_applicant).await {
         Ok(response_data) => HttpResponse::Ok().json(response_data),

@@ -10,6 +10,11 @@ use rand_seeder::Seeder;
 
 use crate::domain::Color;
 
+pub struct Challenge {
+    pub challenge: Vec<String>,
+    pub solution: Vec<String>,
+}
+
 #[derive(strum::EnumIter, Debug)]
 enum EditType {
     Insertion,
@@ -17,11 +22,7 @@ enum EditType {
     Substitution,
 }
 
-pub fn generate_challenge(
-    nuid: &str,
-    n_random: usize,
-    mandatory_cases: Vec<String>,
-) -> (Vec<String>, Vec<String>) {
+pub fn generate_challenge(nuid: &str, n_random: usize, mandatory_cases: Vec<String>) -> Challenge {
     let mut rng: Pcg64 = Seeder::from(nuid).make_rng();
     let random_cases: Vec<String> = (0..n_random)
         .map(|_| {
@@ -80,7 +81,10 @@ pub fn generate_challenge(
         .map(|color| color.to_string())
         .collect::<Vec<String>>();
 
-    (all_cases, answers)
+    Challenge {
+        challenge: all_cases,
+        solution: answers,
+    }
 }
 
 fn n_edits_away(str1: &str, str2: &str, n: isize) -> bool {
@@ -138,12 +142,14 @@ mod tests {
         ];
         let n_mandatory = mandatory_cases.len();
         let n_random = 10;
-        let (cases, answers) =
-            generate_challenge(&String::from("001234567"), n_random, mandatory_cases);
+        let challenge = generate_challenge(&String::from("001234567"), n_random, mandatory_cases);
 
-        assert_eq!(cases.len(), n_mandatory + n_random);
+        assert_eq!(challenge.challenge.len(), n_mandatory + n_random);
 
-        assert!(answers.iter().all(|answer| one_edit_away(answer).is_some()));
+        assert!(challenge
+            .solution
+            .iter()
+            .all(|soln| one_edit_away(soln).is_some()));
     }
 
     #[test]

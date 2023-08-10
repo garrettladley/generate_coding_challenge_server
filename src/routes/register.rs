@@ -64,7 +64,7 @@ pub async fn insert_applicant(
 ) -> Result<ResponseData, sqlx::Error> {
     let registration_time: DateTime<Utc> = SystemTime::now().into();
     let token = Uuid::new_v4();
-    let (challenge, solution) = generate_challenge(
+    let challenge = generate_challenge(
         register_applicant.nuid.as_ref(),
         100,
         vec![
@@ -85,8 +85,8 @@ pub async fn insert_applicant(
         register_applicant.name.as_ref(),
         registration_time,
         &token,
-        &challenge,
-        &solution,
+        &challenge.challenge,
+        &challenge.solution,
     )
     .execute(pool)
     .await
@@ -97,6 +97,6 @@ pub async fn insert_applicant(
 
     Ok(ResponseData {
         token: token.to_string(),
-        challenge,
+        challenge: challenge.challenge,
     })
 }

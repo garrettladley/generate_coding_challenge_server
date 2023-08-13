@@ -22,19 +22,19 @@ services:
         value: ${APP_URL}
       - key: APP_DATABASE__USERNAME
         scope: RUN_TIME
-        value: ${newsletter.USERNAME}
+        value: ${challenge-server.USERNAME}
       - key: APP_DATABASE__PASSWORD
         scope: RUN_TIME
-        value: ${newsletter.PASSWORD}
+        value: ${challenge-server.PASSWORD}
       - key: APP_DATABASE__HOST
         scope: RUN_TIME
-        value: ${newsletter.HOSTNAME}
+        value: ${challenge-server.HOSTNAME}
       - key: APP_DATABASE__PORT
         scope: RUN_TIME
-        value: ${newsletter.PORT}
+        value: ${challenge-server.PORT}
       - key: APP_DATABASE__DATABASE_NAME
         scope: RUN_TIME
-        value: ${newsletter.DATABASE}
+        value: ${challenge-server.DATABASE}
 databases:
   - engine: PG
     name: challenge-server

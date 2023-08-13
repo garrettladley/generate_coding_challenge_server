@@ -1,4 +1,4 @@
-name: zero2prod
+name: generate-coding-challenge-server
 
 region: nyc1
 services:

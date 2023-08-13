@@ -28,7 +28,7 @@ services:
         value: ${challengeserver.PASSWORD}
       - key: APP_DATABASE__HOST
         scope: RUN_TIME
-        value: $challengeserver.HOSTNAME}
+        value: ${challengeserver.HOSTNAME}
       - key: APP_DATABASE__PORT
         scope: RUN_TIME
         value: ${challengeserver.PORT}
@@ -40,4 +40,4 @@ databases:
     name: challengeserver
     num_nodes: 1
     size: db-s-dev-database
-    version: "14"
+    version: "12"

@@ -74,6 +74,9 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
         )
         .build()?;
 
+    for (key, value) in std::env::vars() {
+        println!("{}: {}", key, value);
+    }
     settings.try_deserialize::<Settings>()
 }
 

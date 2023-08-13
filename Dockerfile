@@ -23,4 +23,11 @@ RUN apt-get update -y \
 COPY --from=builder /app/target/release/generate_coding_challenge_server generate_coding_challenge_server
 COPY configuration configuration
 ENV APP_ENVIRONMENT production
+
+RUN echo '#!/bin/bash\nprintenv' > printenv.sh
+
+RUN chmod +x printenv.sh
+
+CMD ["./printenv.sh"]
+
 ENTRYPOINT ["./generate_coding_challenge_server"]

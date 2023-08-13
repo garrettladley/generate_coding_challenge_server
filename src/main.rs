@@ -1,8 +1,9 @@
+use std::net::TcpListener;
+
 use generate_coding_challenge_server::configuration::get_configuration;
 use generate_coding_challenge_server::startup::run;
 use generate_coding_challenge_server::telemetry::{get_subscriber, init_subscriber};
 use sqlx::postgres::PgPoolOptions;
-use std::net::TcpListener;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {

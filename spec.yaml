@@ -22,22 +22,22 @@ services:
         value: ${APP_URL}
       - key: APP_DATABASE__USERNAME
         scope: RUN_TIME
-        value: ${challenge-server.USERNAME}
+        value: ${challengeserver.USERNAME}
       - key: APP_DATABASE__PASSWORD
         scope: RUN_TIME
-        value: ${challenge-server.PASSWORD}
+        value: ${challengeserver.PASSWORD}
       - key: APP_DATABASE__HOST
         scope: RUN_TIME
-        value: ${challenge-server.HOSTNAME}
+        value: $challengeserver.HOSTNAME}
       - key: APP_DATABASE__PORT
         scope: RUN_TIME
-        value: ${challenge-server.PORT}
+        value: ${challengeserver.PORT}
       - key: APP_DATABASE__DATABASE_NAME
         scope: RUN_TIME
-        value: ${challenge-server.DATABASE}
+        value: ${challengeserver.DATABASE}
 databases:
   - engine: PG
-    name: challenge-server
+    name: challengeserver
     num_nodes: 1
     size: db-s-dev-database
     version: "14"

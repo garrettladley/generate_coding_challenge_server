@@ -1,11 +1,13 @@
-mod challenge;
+pub mod applicants;
+pub mod challenge;
 mod forgot_token;
 mod health_check;
-mod register;
-mod submit;
+pub mod register;
+pub mod submit;
 
-pub use challenge::challenge;
+pub use applicants::{applicants, ApplicantsBodyData};
+pub use challenge::{challenge, ChallengeResponseData};
 pub use forgot_token::forgot_token;
 pub use health_check::health_check;
-pub use register::register;
-pub use submit::submit;
+pub use register::{register, RegisterResponseData};
+pub use submit::{submit, SubmitResponseData};

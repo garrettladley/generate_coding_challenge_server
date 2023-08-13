@@ -21,12 +21,6 @@ impl AsRef<Vec<String>> for BodyData {
     }
 }
 
-#[derive(serde::Serialize)]
-pub struct ResponseData {
-    pub correct: bool,
-    pub message: String,
-}
-
 pub struct IntermediarySolution {
     pub nuid: String,
     pub actual_solution: Vec<String>,
@@ -35,6 +29,12 @@ pub struct IntermediarySolution {
 pub struct SolutionToBeChecked {
     pub nuid: Nuid,
     pub solution: Vec<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct SubmitResponseData {
+    pub correct: bool,
+    pub message: String,
 }
 
 #[tracing::instrument(
@@ -50,20 +50,25 @@ pub async fn submit(
     body: web::Json<BodyData>,
     pool: web::Data<PgPool>,
 ) -> HttpResponse {
-    let token = match uuid::Uuid::parse_str(&token.into_inner()) {
+    let token = match uuid::Uuid::parse_str(&token) {
         Ok(token) => token,
-        Err(token) => {
-            tracing::error!("Invalid token! Given: \"{:?}\"", token);
-            return HttpResponse::BadRequest()
-                .json(format!("Invalid token! Given: \"{:?}\"", token));
+        Err(_) => {
+            tracing::error!("Invalid token! Given: {}", token);
+            return HttpResponse::BadRequest().json(format!("Invalid token! Given: {}", token));
         }
     };
 
     let solution_to_be_checked = match retrieve_solution(&pool, &token).await {
         Ok(intermediary_solution) => {
-            let nuid = match Nuid::parse(intermediary_solution.nuid) {
+            let nuid = match Nuid::parse(intermediary_solution.nuid.clone()) {
                 Ok(nuid) => nuid,
-                Err(_) => return HttpResponse::InternalServerError().finish(),
+                Err(_) => {
+                    tracing::error!(
+                        "Invalid database state for NUID! Given: {}",
+                        intermediary_solution.nuid
+                    );
+                    return HttpResponse::InternalServerError().finish();
+                }
             };
             SolutionToBeChecked {
                 nuid,
@@ -92,7 +97,7 @@ pub async fn submit(
         }
     }
 
-    let response_data = ResponseData {
+    let response_data = SubmitResponseData {
         correct,
         message: if correct {
             "Correct - nice work!".to_string()

@@ -1,7 +1,9 @@
 use generate_coding_challenge_server::configuration::{get_configuration, DatabaseSettings};
 use generate_coding_challenge_server::startup::run;
 use generate_coding_challenge_server::telemetry::{get_subscriber, init_subscriber};
+use maplit::hashmap;
 use once_cell::sync::Lazy;
+use reqwest::Response;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use uuid::Uuid;
@@ -63,4 +65,24 @@ pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
         .expect("Failed to migrate the database");
 
     connection_pool
+}
+
+pub async fn register_sample_applicant(client: &reqwest::Client, address: &str) -> Response {
+    register_sample_applicant_with_nuid(client, address, "001234567").await
+}
+
+pub async fn register_sample_applicant_with_nuid(
+    client: &reqwest::Client,
+    address: &str,
+    nuid: &str,
+) -> Response {
+    client
+        .post(&format!("{}/register", address))
+        .json(&hashmap! {
+            "name" => "Garrett",
+            "nuid" => nuid,
+        })
+        .send()
+        .await
+        .expect("Failed to execute request.")
 }

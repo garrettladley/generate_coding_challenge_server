@@ -4,7 +4,7 @@ use actix_web::{web, HttpResponse};
 use sqlx::{query, PgPool};
 
 #[derive(serde::Serialize)]
-pub struct ResponseData {
+pub struct ForgotTokenResponseData {
     pub token: String,
 }
 
@@ -43,7 +43,10 @@ pub async fn forgot_token(nuid: web::Path<String>, pool: web::Data<PgPool>) -> H
 }
 
 #[tracing::instrument(name = "Fetching applicant token from the database.", skip(nuid, pool))]
-pub async fn retrieve_token(pool: &PgPool, nuid: &Nuid) -> Result<ResponseData, sqlx::Error> {
+pub async fn retrieve_token(
+    pool: &PgPool,
+    nuid: &Nuid,
+) -> Result<ForgotTokenResponseData, sqlx::Error> {
     let record = query!(
         r#"SELECT token FROM applicants WHERE nuid=$1"#,
         nuid.as_ref()
@@ -59,7 +62,7 @@ pub async fn retrieve_token(pool: &PgPool, nuid: &Nuid) -> Result<ResponseData, 
         return Err(sqlx::Error::RowNotFound);
     }
 
-    Ok(ResponseData {
+    Ok(ForgotTokenResponseData {
         token: record.token.to_string(),
     })
 }

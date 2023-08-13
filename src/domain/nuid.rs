@@ -1,11 +1,11 @@
 use unicode_segmentation::UnicodeSegmentation;
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Nuid(String);
 
 impl std::fmt::Display for Nuid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0.as_str())
+        write!(f, "{}", self.0)
     }
 }
 
@@ -38,32 +38,32 @@ mod tests {
 
     #[test]
     fn a_9_grapheme_long_all_int_nuid_is_valid() {
-        let name = "1".repeat(9);
-        assert_ok!(Nuid::parse(name));
+        let nuid = "1".repeat(9);
+        assert_ok!(Nuid::parse(nuid));
     }
 
     #[test]
     fn whitespace_only_is_rejected() {
-        let name = " ".to_string();
-        assert_err!(Nuid::parse(name));
+        let nuid = " ".to_string();
+        assert_err!(Nuid::parse(nuid));
     }
 
     #[test]
     fn empty_string_is_rejected() {
-        let name = "".to_string();
-        assert_err!(Nuid::parse(name));
+        let nuid = "".to_string();
+        assert_err!(Nuid::parse(nuid));
     }
 
     #[test]
     fn a_10_grapheme_long_all_int_nuid_is_rejected() {
-        let name = "1".repeat(10);
-        assert_err!(Nuid::parse(name));
+        let nuid = "1".repeat(10);
+        assert_err!(Nuid::parse(nuid));
     }
 
     #[test]
     fn a_9_grapheme_long_all_string_nuid_is_rejected() {
-        let name = "a".repeat(9);
-        assert_err!(Nuid::parse(name));
+        let nuid = "a".repeat(9);
+        assert_err!(Nuid::parse(nuid));
     }
 
     #[test]

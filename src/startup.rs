@@ -1,4 +1,4 @@
-use crate::routes::{challenge, forgot_token, health_check, register, submit};
+use crate::routes::{applicants, challenge, forgot_token, health_check, register, submit};
 use actix_web::{dev::Server, web, App, HttpServer};
 use sqlx::PgPool;
 use std::net::TcpListener;
@@ -14,6 +14,7 @@ pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Er
             .route("/forgot_token/{nuid}", web::get().to(forgot_token))
             .route("/challenge/{token}", web::get().to(challenge))
             .route("/submit/{token}", web::post().to(submit))
+            .route("/applicants", web::get().to(applicants))
             .app_data(db_pool.clone())
     })
     .listen(listener)?

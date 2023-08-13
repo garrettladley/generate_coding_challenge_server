@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT nuid FROM applicants where nuid=$1;",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "nuid",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "e44d95842b14685ce9f7eb2a05844fa6d75c60dc1d53a20a5bd6a36f986bafa7"
+}

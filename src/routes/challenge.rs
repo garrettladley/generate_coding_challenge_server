@@ -1,8 +1,8 @@
 use actix_web::{web, HttpResponse};
 use sqlx::{query, PgPool};
 
-#[derive(serde::Serialize)]
-pub struct ResponseData {
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
+pub struct ChallengeResponseData {
     pub challenge: Vec<String>,
 }
 
@@ -44,7 +44,7 @@ pub async fn challenge(token: web::Path<String>, pool: web::Data<PgPool>) -> Htt
 pub async fn retrieve_challenge(
     pool: &PgPool,
     token: &uuid::Uuid,
-) -> Result<ResponseData, sqlx::Error> {
+) -> Result<ChallengeResponseData, sqlx::Error> {
     let record = query!(r#"SELECT challenge FROM applicants WHERE token=$1"#, token)
         .fetch_one(pool)
         .await
@@ -57,7 +57,7 @@ pub async fn retrieve_challenge(
         return Err(sqlx::Error::RowNotFound);
     }
 
-    Ok(ResponseData {
+    Ok(ChallengeResponseData {
         challenge: record.challenge,
     })
 }

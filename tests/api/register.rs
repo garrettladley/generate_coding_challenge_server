@@ -1,7 +1,7 @@
+use generate_coding_challenge_server::routes::RegisterResponseData;
 use maplit::hashmap;
-use serde_json::Value;
 
-use crate::helpers::spawn_app;
+use crate::helpers::{register_sample_applicant, spawn_app};
 
 #[tokio::test]
 async fn register_returns_a_200_for_valid_request_body() {
@@ -9,32 +9,16 @@ async fn register_returns_a_200_for_valid_request_body() {
 
     let client = reqwest::Client::new();
 
-    let response = client
-        .post(&format!("{}/register", &app.address))
-        .json(&hashmap! {
-            "name" => "Garrett",
-            "nuid" => "001234567",
-        })
-        .send()
-        .await
-        .expect("Failed to execute request.");
+    let response = register_sample_applicant(&client, &app.address).await;
 
     assert_eq!(200, response.status().as_u16());
 
-    let response_json: Value = serde_json::from_str(&response.text().await.unwrap())
+    let response: RegisterResponseData = serde_json::from_str(&response.text().await.unwrap())
         .expect("Failed to parse response JSON");
-
-    assert!(response_json["token"].is_string());
-    assert!(response_json["challenge"].is_array());
-
-    assert!(!response_json["token"].as_str().unwrap().is_empty());
 
     let num_mandatory = 7;
     let num_random = 100;
-    assert_eq!(
-        response_json["challenge"].as_array().unwrap().len(),
-        num_mandatory + num_random
-    );
+    assert_eq!(response.challenge.len(), num_mandatory + num_random);
 
     let saved = sqlx::query!("SELECT applicant_name, nuid FROM applicants",)
         .fetch_one(&app.db_pool)
@@ -124,10 +108,31 @@ async fn register_returns_a_400_when_fields_are_present_but_invalid() {
             "The API did not fail with 400 Bad Request when the payload was {}.",
             error_message
         );
-        let expected: serde_json::Value =
-            serde_json::from_str(&format!("\"{}\"", error_message)).unwrap();
-        let actual: serde_json::Value =
-            serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
+        let expected: String = serde_json::from_str(&format!("\"{}\"", error_message)).unwrap();
+        let actual: String = serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
         assert_eq!(expected, actual);
     }
+}
+
+#[tokio::test]
+async fn register_returns_a_409_for_user_that_already_exists() {
+    let app = spawn_app().await;
+
+    let client = reqwest::Client::new();
+
+    let response = register_sample_applicant(&client, &app.address).await;
+
+    assert_eq!(200, response.status().as_u16());
+
+    let response = register_sample_applicant(&client, &app.address).await;
+
+    assert_eq!(409, response.status().as_u16());
+
+    let response_json: String = serde_json::from_str(&response.text().await.unwrap())
+        .expect("Failed to parse response JSON");
+
+    assert_eq!(
+        response_json,
+        "NUID 001234567 has already registered! Use the forgot-token endpoint to retrieve your token."
+    );
 }

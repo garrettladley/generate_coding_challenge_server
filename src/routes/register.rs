@@ -23,8 +23,8 @@ impl TryFrom<BodyData> for RegisterApplicant {
     }
 }
 
-#[derive(serde::Serialize)]
-pub struct ResponseData {
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct RegisterResponseData {
     pub token: String,
     pub challenge: Vec<String>,
 }
@@ -49,7 +49,17 @@ pub async fn register(body: web::Json<BodyData>, pool: web::Data<PgPool>) -> Htt
         Ok(response_data) => HttpResponse::Ok().json(response_data),
         Err(e) => {
             tracing::error!("Failed to execute query: {:?}", e);
-            HttpResponse::InternalServerError().finish()
+            match e {
+                sqlx::Error::Database(db_err) => {
+                    if db_err.code() == Some(std::borrow::Cow::Borrowed("23505")) {
+                        HttpResponse::Conflict().json(format!("NUID {} has already registered! Use the forgot-token endpoint to retrieve your token.", register_applicant.nuid.as_ref()))
+                    } else {
+                        HttpResponse::InternalServerError()
+                            .json(format!("Database error: {:?}", db_err))
+                    }
+                }
+                _ => HttpResponse::InternalServerError().json(format!("SQLX error: {:?}", e)),
+            }
         }
     }
 }
@@ -61,7 +71,7 @@ pub async fn register(body: web::Json<BodyData>, pool: web::Data<PgPool>) -> Htt
 pub async fn insert_applicant(
     pool: &PgPool,
     register_applicant: &RegisterApplicant,
-) -> Result<ResponseData, sqlx::Error> {
+) -> Result<RegisterResponseData, sqlx::Error> {
     let registration_time: DateTime<Utc> = SystemTime::now().into();
     let token = Uuid::new_v4();
     let challenge = generate_challenge(
@@ -95,7 +105,7 @@ pub async fn insert_applicant(
         e
     })?;
 
-    Ok(ResponseData {
+    Ok(RegisterResponseData {
         token: token.to_string(),
         challenge: challenge.challenge,
     })

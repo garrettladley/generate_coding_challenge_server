@@ -1,3 +1,4 @@
+use generate_coding_challenge_server::routes::RegisterResponseData;
 use maplit::hashmap;
 use serde_json::Value;
 
@@ -11,7 +12,7 @@ async fn forgot_token_returns_a_200_for_nuid_that_exists() {
 
     let nuid = "001234567";
 
-    let response = client
+    let register_response = client
         .post(&format!("{}/register", &app.address))
         .json(&hashmap! {
             "name" => "Garrett",
@@ -21,17 +22,13 @@ async fn forgot_token_returns_a_200_for_nuid_that_exists() {
         .await
         .expect("Failed to execute request.");
 
-    assert_eq!(200, response.status().as_u16());
+    assert_eq!(200, register_response.status().as_u16());
 
-    let token = response
-        .json::<Value>()
-        .await
-        .expect("Failed to deserialize response body.")
-        .get("token")
-        .expect("Token not found in response body.")
-        .as_str()
-        .expect("Token is not a string.")
-        .to_owned();
+    let response: RegisterResponseData =
+        serde_json::from_str(&register_response.text().await.unwrap())
+            .expect("Failed to parse response JSON");
+
+    let token = response.token;
 
     let response = client
         .get(&format!("{}/forgot_token/{}", &app.address, &nuid))
@@ -113,12 +110,11 @@ async fn forgot_token_returns_a_404_for_nuid_that_does_not_exist_in_db() {
 
     assert_eq!(404, response.status().as_u16());
 
-    let expected: serde_json::Value = serde_json::from_str(&format!(
+    let expected: String = serde_json::from_str(&format!(
         "\"Record associated with given NUID not found! NUID: {}\"",
         &bad_nuid
     ))
     .unwrap();
-    let actual: serde_json::Value =
-        serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
+    let actual: String = serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
     assert_eq!(expected, actual);
 }

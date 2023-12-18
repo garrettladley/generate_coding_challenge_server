@@ -4,7 +4,7 @@ use unicode_segmentation::UnicodeSegmentation;
 pub struct ApplicantName(String);
 
 impl ApplicantName {
-    pub fn parse(s: String) -> Result<ApplicantName, String> {
+    pub fn parse(s: &str) -> Result<ApplicantName, String> {
         let is_empty_or_whitespace = s.trim().is_empty();
 
         let is_too_long = s.graphemes(true).count() > 256;
@@ -15,7 +15,7 @@ impl ApplicantName {
         if is_empty_or_whitespace || is_too_long || contains_forbidden_characters {
             Err(format!("Invalid name! Given: {}", s))
         } else {
-            Ok(Self(s))
+            Ok(Self(s.to_string()))
         }
     }
 }
@@ -33,39 +33,33 @@ mod tests {
 
     #[test]
     fn a_256_grapeme_long_name_is_valid() {
-        let name = "a".repeat(256);
-        assert_ok!(ApplicantName::parse(name));
+        assert_ok!(ApplicantName::parse("a".repeat(256).as_str()));
     }
 
     #[test]
     fn a_name_longer_than_256_grapehemes_is_rejected() {
-        let name = "a".repeat(257);
-        assert_err!(ApplicantName::parse(name));
+        assert_err!(ApplicantName::parse("a".repeat(257).as_str()));
     }
 
     #[test]
     fn whitespace_only_names_are_rejected() {
-        let name = " ".to_string();
-        assert_err!(ApplicantName::parse(name));
+        assert_err!(ApplicantName::parse(" "));
     }
 
     #[test]
     fn empty_string_is_rejected() {
-        let name = "".to_string();
-        assert_err!(ApplicantName::parse(name));
+        assert_err!(ApplicantName::parse(""));
     }
 
     #[test]
     fn names_containing_an_invalid_character_are_rejected() {
         for name in &['/', '(', ')', '"', '<', '>', '\\', '{', '}'] {
-            let name = name.to_string();
-            assert_err!(ApplicantName::parse(name));
+            assert_err!(ApplicantName::parse(&name.to_string()));
         }
     }
 
     #[test]
     fn a_valid_name_is_parsed_successfully() {
-        let name = "Muneer Lalji".to_string();
-        assert_ok!(ApplicantName::parse(name));
+        assert_ok!(ApplicantName::parse("Muneer Lalji"));
     }
 }

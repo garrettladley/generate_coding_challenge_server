@@ -1,4 +1,6 @@
 .env
+.git
+.gitignore
 .dockerignore
 spec.yaml
 target/
@@ -7,3 +9,4 @@ tests/
 Dockerfile
 scripts/
 migrations/
+README.md

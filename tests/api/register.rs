@@ -16,8 +16,8 @@ async fn register_returns_a_200_for_valid_request_body() {
     let response: RegisterResponseData = serde_json::from_str(&response.text().await.unwrap())
         .expect("Failed to parse response JSON");
 
-    let num_mandatory = 7;
-    let num_random = 100;
+    let num_mandatory = 4;
+    let num_random = 256;
     assert_eq!(response.challenge.len(), num_mandatory + num_random);
 
     let saved = sqlx::query!("SELECT applicant_name, nuid FROM applicants",)

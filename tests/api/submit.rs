@@ -3,7 +3,7 @@ use serde_json::Value;
 
 use crate::helpers::{register_sample_applicant, spawn_app};
 use generate_coding_challenge_server::{
-    domain::algo_question::one_edit_away,
+    domain::algo_question::parse_barcode,
     routes::{RegisterResponseData, SubmitResponseData},
 };
 
@@ -30,7 +30,7 @@ async fn submit_returns_a_200_for_correct_solution() {
 
     let solution = challenge
         .iter()
-        .filter_map(|case| one_edit_away(case))
+        .map(|case| parse_barcode(case))
         .map(|color| color.to_string())
         .collect::<Vec<String>>();
 
@@ -167,4 +167,96 @@ async fn submit_returns_a_404_for_user_that_does_not_exist() {
     .unwrap();
     let actual: String = serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
     assert_eq!(expected, actual);
+}
+
+#[tokio::test]
+async fn submit_correct_then_incorrect_results_in_incorrect() {
+    let app = spawn_app().await;
+
+    let client = reqwest::Client::new();
+
+    let register_response = register_sample_applicant(&client, &app.address).await;
+
+    assert_eq!(200, register_response.status().as_u16());
+
+    let response_json: Value = serde_json::from_str(&register_response.text().await.unwrap())
+        .expect("Failed to parse response JSON");
+
+    let token = response_json["token"].as_str().unwrap();
+    let challenge: Vec<String> = response_json["challenge"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|value| value.as_str().map(String::from))
+        .collect();
+
+    let solution = challenge
+        .iter()
+        .map(|case| parse_barcode(case))
+        .map(|color| color.to_string())
+        .collect::<Vec<String>>();
+
+    let solution_json: serde_json::Value = serde_json::Value::Array(
+        solution
+            .iter()
+            .map(|s| serde_json::Value::String(s.clone()))
+            .collect(),
+    );
+
+    let response = client
+        .post(&format!("{}/submit/{}", &app.address, &token))
+        .json(&solution_json)
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    assert_eq!(200, response.status().as_u16());
+
+    let response: SubmitResponseData = serde_json::from_str(&response.text().await.unwrap())
+        .expect("Failed to parse response JSON");
+
+    let correct = response.correct;
+    let message = response.message;
+
+    assert!(correct);
+    assert_eq!("Correct - nice work!", message);
+
+    let saved = sqlx::query!("SELECT nuid, correct FROM submissions",)
+        .fetch_one(&app.db_pool)
+        .await
+        .expect("Failed to fetch saved applicant.");
+
+    assert_eq!(saved.nuid, "001234567");
+    assert!(saved.correct);
+
+    let solution_json: serde_json::Value = serde_json::Value::Array(Vec::new());
+
+    let response = client
+        .post(&format!("{}/submit/{}", &app.address, &token))
+        .json(&solution_json)
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    assert_eq!(200, response.status().as_u16());
+
+    let response: SubmitResponseData = serde_json::from_str(&response.text().await.unwrap())
+        .expect("Failed to parse response JSON");
+
+    let correct = response.correct;
+    let message = response.message;
+
+    assert!(!correct);
+    assert_eq!("Incorrect Solution", message);
+
+    let most_recent_sub = sqlx::query!(
+        "SELECT nuid, correct FROM submissions
+        ORDER BY submission_time DESC",
+    )
+    .fetch_one(&app.db_pool)
+    .await
+    .expect("Failed to fetch saved applicant.");
+
+    assert_eq!(most_recent_sub.nuid, "001234567");
+    assert!(!most_recent_sub.correct);
 }

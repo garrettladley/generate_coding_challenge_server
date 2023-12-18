@@ -1,6 +1,6 @@
 [package]
 name = "generate_coding_challenge_server"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 
@@ -30,16 +30,13 @@ log = "0.4"
 tracing = "0.1.19"
 tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
 tracing-bunyan-formatter = "0.3.1"
-tracing-log = "0.1.1"
+tracing-log = "0.2.0"
 serde-aux = "4"
 unicode-segmentation = "1.7.1"
 tracing-actix-web = "0.7"
 secrecy = { version = "0.8", features = ["serde"] }
 rand = "0.8.5"
 strum = { version = "0.25", features = ["derive"] }
-rand_pcg = "0.3.1"
-rand_seeder = "0.2.3"
-thiserror = "1.0.32"
 
 [dev-dependencies]
 reqwest = { version = "0.11", features = ["json"] }

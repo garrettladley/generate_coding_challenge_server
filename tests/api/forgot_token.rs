@@ -1,6 +1,5 @@
 use generate_coding_challenge_server::routes::RegisterResponseData;
 use maplit::hashmap;
-use serde_json::Value;
 
 use crate::helpers::spawn_app;
 
@@ -38,10 +37,7 @@ async fn forgot_token_returns_a_200_for_nuid_that_exists() {
 
     assert_eq!(200, response.status().as_u16());
 
-    let response_json: Value = serde_json::from_str(&response.text().await.unwrap())
-        .expect("Failed to parse response JSON");
-
-    assert_eq!(response_json["token"], token);
+    assert_eq!(response.text().await.unwrap(), token);
 }
 
 #[tokio::test]

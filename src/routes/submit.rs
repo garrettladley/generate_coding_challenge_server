@@ -60,7 +60,7 @@ pub async fn submit(
 
     let solution_to_be_checked = match retrieve_solution(&pool, &token).await {
         Ok(intermediary_solution) => {
-            let nuid = match Nuid::parse(intermediary_solution.nuid.clone()) {
+            let nuid = match Nuid::parse(&intermediary_solution.nuid) {
                 Ok(nuid) => nuid,
                 Err(_) => {
                     tracing::error!(

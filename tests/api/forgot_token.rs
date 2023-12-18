@@ -106,11 +106,11 @@ async fn forgot_token_returns_a_404_for_nuid_that_does_not_exist_in_db() {
 
     assert_eq!(404, response.status().as_u16());
 
-    let expected: String = serde_json::from_str(&format!(
-        "\"Record associated with given NUID not found! NUID: {}\"",
-        &bad_nuid
-    ))
-    .unwrap();
-    let actual: String = serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
-    assert_eq!(expected, actual);
+    assert_eq!(
+        format!(
+            "Record associated with given NUID not found! NUID: {}",
+            &bad_nuid
+        ),
+        response.text().await.unwrap()
+    );
 }

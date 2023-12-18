@@ -50,11 +50,10 @@ async fn challenge_returns_a_400_for_invalid_uuid() {
 
     assert_eq!(400, response.status().as_u16());
 
-    let expected: serde_json::Value =
-        serde_json::from_str(&format!("\"Invalid token! Given: {}\"", &bad_token)).unwrap();
-    let actual: serde_json::Value =
-        serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
-    assert_eq!(expected, actual);
+    assert_eq!(
+        format!("Invalid token! Given: {}", &bad_token),
+        response.text().await.unwrap()
+    );
 }
 
 #[tokio::test]
@@ -73,11 +72,11 @@ async fn challenge_returns_a_404_for_token_that_does_not_exist_in_db() {
 
     assert_eq!(404, response.status().as_u16());
 
-    let expected: String = serde_json::from_str(&format!(
-        "\"Record associated with given token not found! Token: {}\"",
-        &bad_token
-    ))
-    .unwrap();
-    let actual: String = serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
-    assert_eq!(expected, actual);
+    assert_eq!(
+        format!(
+            "Record associated with given token not found! Token: {}",
+            &bad_token
+        ),
+        response.text().await.unwrap()
+    );
 }

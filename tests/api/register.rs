@@ -128,11 +128,8 @@ async fn register_returns_a_409_for_user_that_already_exists() {
 
     assert_eq!(409, response.status().as_u16());
 
-    let response_json: String = serde_json::from_str(&response.text().await.unwrap())
-        .expect("Failed to parse response JSON");
-
     assert_eq!(
-        response_json,
-        "NUID 001234567 has already registered! Use the forgot-token endpoint to retrieve your token."
+        "NUID 001234567 has already registered! Use the forgot-token endpoint to retrieve your token.",
+        response.text().await.unwrap()
     );
 }

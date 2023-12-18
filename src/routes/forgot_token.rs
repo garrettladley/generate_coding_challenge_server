@@ -30,7 +30,7 @@ pub async fn forgot_token(nuid: web::Path<String>, pool: web::Data<PgPool>) -> H
                 "Record associated with given NUID not found! NUID: {}",
                 nuid
             );
-            HttpResponse::NotFound().json(format!(
+            HttpResponse::NotFound().body(format!(
                 "Record associated with given NUID not found! NUID: {}",
                 nuid
             ))

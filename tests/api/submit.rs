@@ -160,13 +160,13 @@ async fn submit_returns_a_404_for_user_that_does_not_exist() {
 
     assert_eq!(404, response.status().as_u16());
 
-    let expected: String = serde_json::from_str(&format!(
-        "\"Record associated with given token not found! Token: {}\"",
-        &bad_token
-    ))
-    .unwrap();
-    let actual: String = serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
-    assert_eq!(expected, actual);
+    assert_eq!(
+        format!(
+            "Record associated with given token not found! Token: {}",
+            &bad_token
+        ),
+        response.text().await.unwrap()
+    );
 }
 
 #[tokio::test]

@@ -52,13 +52,13 @@ pub async fn register(body: web::Json<BodyData>, pool: web::Data<PgPool>) -> Htt
             match e {
                 sqlx::Error::Database(db_err) => {
                     if db_err.code() == Some(std::borrow::Cow::Borrowed("23505")) {
-                        HttpResponse::Conflict().json(format!("NUID {} has already registered! Use the forgot-token endpoint to retrieve your token.", register_applicant.nuid.as_ref()))
+                        HttpResponse::Conflict().body(format!("NUID {} has already registered! Use the forgot-token endpoint to retrieve your token.", register_applicant.nuid.as_ref()))
                     } else {
                         HttpResponse::InternalServerError()
-                            .json(format!("Database error: {:?}", db_err))
+                            .body(format!("Database error: {:?}", db_err))
                     }
                 }
-                _ => HttpResponse::InternalServerError().json(format!("SQLX error: {:?}", e)),
+                _ => HttpResponse::InternalServerError().body(format!("SQLX error: {:?}", e)),
             }
         }
     }

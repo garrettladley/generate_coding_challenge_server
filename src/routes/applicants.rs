@@ -89,7 +89,7 @@ pub async fn applicants(
         Ok(nuids) => nuids,
         Err(err) => {
             tracing::error!(err);
-            return HttpResponse::BadRequest().json(err);
+            return HttpResponse::BadRequest().body(err);
         }
     };
     match select_applicants(&pool, &nuids).await {

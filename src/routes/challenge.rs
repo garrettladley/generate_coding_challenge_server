@@ -18,14 +18,14 @@ pub async fn challenge(token: web::Path<String>, pool: web::Data<PgPool>) -> Htt
         Ok(token) => token,
         Err(_) => {
             tracing::error!("Invalid token! Given: {}", token);
-            return HttpResponse::BadRequest().json(format!("Invalid token! Given: {}", token));
+            return HttpResponse::BadRequest().body(format!("Invalid token! Given: {}", token));
         }
     };
     match retrieve_challenge(&pool, &token).await {
         Ok(response_data) => HttpResponse::Ok().json(response_data),
         Err(sqlx::Error::RowNotFound) => {
             tracing::error!("Row not found: {:?}", token);
-            HttpResponse::NotFound().json(format!(
+            HttpResponse::NotFound().body(format!(
                 "Record associated with given token not found! Token: {}",
                 token
             ))

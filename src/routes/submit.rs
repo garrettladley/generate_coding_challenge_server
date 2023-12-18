@@ -54,7 +54,7 @@ pub async fn submit(
         Ok(token) => token,
         Err(_) => {
             tracing::error!("Invalid token! Given: {}", token);
-            return HttpResponse::BadRequest().json(format!("Invalid token! Given: {}", token));
+            return HttpResponse::BadRequest().body(format!("Invalid token! Given: {}", token));
         }
     };
 
@@ -77,7 +77,7 @@ pub async fn submit(
         }
         Err(sqlx::Error::RowNotFound) => {
             tracing::error!("Row not found: {:?}", token);
-            return HttpResponse::NotFound().json(format!(
+            return HttpResponse::NotFound().body(format!(
                 "Record associated with given token not found! Token: {}",
                 token
             ));

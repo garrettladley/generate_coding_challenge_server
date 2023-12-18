@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use rand::{
     seq::{IteratorRandom, SliceRandom},
     Rng,
@@ -5,80 +7,58 @@ use rand::{
 
 use strum::IntoEnumIterator;
 
-use rand_pcg::Pcg64;
-use rand_seeder::Seeder;
-
-use crate::domain::Color;
-
 pub struct Challenge {
     pub challenge: Vec<String>,
     pub solution: Vec<String>,
 }
 
-#[derive(strum::EnumIter, Debug)]
-enum EditType {
-    Insertion,
-    Deletion,
-    Substitution,
+#[derive(strum::EnumIter, Default, Debug)]
+enum Instruction {
+    #[default]
+    BegEnd,
+    Repeat,
+    Reverse,
+    Encrypt,
 }
 
-pub fn generate_challenge(nuid: &str, n_random: usize, mandatory_cases: Vec<String>) -> Challenge {
-    let mut rng: Pcg64 = Seeder::from(nuid).make_rng();
-    let random_cases: Vec<String> = (0..n_random)
-        .map(|_| {
-            let color = Color::iter().choose(&mut rng).unwrap().to_string();
-            let len = color.len();
-            let random_count = rng.gen_range(0..=len);
-            if random_count == 0 {
-                return color;
-            }
-            match EditType::iter().choose(&mut rng).unwrap() {
-                EditType::Deletion => color.chars().skip(random_count).collect(),
-                EditType::Insertion => {
-                    let alphabet: Vec<char> = ('a'..='z').collect();
-                    let mut color_chars: Vec<char> = color.chars().collect();
-                    let random_chars = alphabet
-                        .choose_multiple(&mut rng, random_count)
-                        .cloned()
-                        .collect::<Vec<char>>();
-                    let random_indices = (0..random_count)
-                        .map(|_| rng.gen_range(0..=color_chars.len()))
-                        .collect::<Vec<usize>>();
-                    for (index, random_char) in random_indices.into_iter().zip(random_chars) {
-                        color_chars.insert(index, random_char);
-                    }
-                    color_chars.into_iter().collect()
-                }
-                EditType::Substitution => {
-                    let changed_indices: Vec<_> =
-                        (0..random_count).map(|_| rng.gen_range(0..len)).collect();
-                    let alphabet: Vec<char> = ('a'..='z').collect();
-                    let mut color_chars: Vec<char> = color.chars().collect();
+impl Display for Instruction {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Instruction::BegEnd => write!(f, "#"),
+            Instruction::Repeat => write!(f, "!"),
+            Instruction::Reverse => write!(f, "^"),
+            Instruction::Encrypt => write!(f, "%"),
+        }
+    }
+}
 
-                    for index in changed_indices {
-                        let original_char = color_chars[index];
-                        let mut new_char;
-                        loop {
-                            new_char = *alphabet.choose(&mut rng).unwrap();
-                            if new_char != original_char {
-                                break;
-                            }
-                        }
-                        color_chars[index] = new_char;
-                    }
-                    color_chars.into_iter().collect()
-                }
-            }
-        })
-        .collect();
+impl Instruction {
+    fn parse(value: &char) -> Option<Instruction> {
+        match value {
+            '#' => Some(Instruction::BegEnd),
+            '!' => Some(Instruction::Repeat),
+            '^' => Some(Instruction::Reverse),
+            '%' => Some(Instruction::Encrypt),
+            _ => None,
+        }
+    }
+}
+
+pub fn generate_challenge(n_random: usize, mandatory_cases: Vec<String>) -> Challenge {
+    let mut rng = rand::thread_rng();
+    let random_cases = (0..n_random)
+        .map(|_| generate_random_case(&mut rng))
+        .collect::<Vec<String>>();
 
     let mut all_cases = mandatory_cases;
+
     all_cases.extend(random_cases);
 
-    let answers: Vec<String> = all_cases
+    all_cases.shuffle(&mut rng);
+
+    let answers = all_cases
         .iter()
-        .filter_map(|case| one_edit_away(case))
-        .map(|color| color.to_string())
+        .map(|case| parse_barcode(case))
         .collect::<Vec<String>>();
 
     Challenge {
@@ -87,77 +67,120 @@ pub fn generate_challenge(nuid: &str, n_random: usize, mandatory_cases: Vec<Stri
     }
 }
 
-fn n_edits_away(str1: &str, str2: &str, n: isize) -> bool {
-    if (str1.len() as isize - str2.len() as isize).abs() > n {
-        return false;
-    }
+fn generate_random_case(rng: &mut impl Rng) -> String {
+    let string_length = rng.gen_range(32..=64);
+    let num_instructions = rng.gen_range(16..=32);
 
-    let (shorter, longer) = if str1.len() > str2.len() {
-        (str2, str1)
-    } else {
-        (str1, str2)
-    };
+    let mut result = Instruction::BegEnd.to_string();
 
-    let mut short_pointer = 0;
-    let mut long_pointer = 0;
-    let mut edit_count = 0;
+    result += &(0..string_length)
+        .map(|_| rng.gen_range(0..=9).to_string())
+        .collect::<String>();
 
-    while short_pointer < shorter.len() && long_pointer < longer.len() {
-        if shorter.chars().nth(short_pointer) != longer.chars().nth(long_pointer) {
-            edit_count += 1;
-            if edit_count > n {
-                return false;
+    let mut instruction_positions: Vec<usize> = (1..string_length).collect();
+    instruction_positions.shuffle(rng);
+    instruction_positions.truncate(num_instructions);
+    instruction_positions.sort_unstable();
+
+    instruction_positions
+        .iter()
+        .enumerate()
+        .for_each(|(i, &position)| {
+            if let Some(instruction) = Instruction::iter().choose(rng) {
+                let instruction_str = instruction.to_string();
+                let adjusted_position = position + i * instruction_str.len();
+                result.insert_str(adjusted_position, &instruction_str);
             }
-            if shorter.len() == longer.len() {
-                short_pointer += 1;
+        });
+
+    result += &Instruction::BegEnd.to_string();
+
+    result
+}
+
+pub fn parse_barcode(barcode: &str) -> String {
+    let mut result: Vec<String> = Vec::new();
+    let mut current_block = String::new();
+    let mut previous_block = String::new();
+
+    for c in barcode.chars() {
+        match Instruction::parse(&c) {
+            Some(instrunction) => match instrunction {
+                Instruction::BegEnd => {
+                    result.push(current_block.clone());
+                    previous_block = current_block.clone();
+                    current_block.clear();
+                }
+                Instruction::Repeat => {
+                    current_block += &previous_block;
+                }
+                Instruction::Reverse => {
+                    if let Some(last) = result.last_mut() {
+                        *last = last.chars().rev().collect();
+                    }
+                }
+                Instruction::Encrypt => {
+                    if let Some(last) = result.last_mut() {
+                        *last = last
+                            .chars()
+                            .map(|d| {
+                                if d == '0' {
+                                    '0'
+                                } else {
+                                    std::char::from_digit((d.to_digit(10).unwrap() * 2) % 10, 10)
+                                        .unwrap()
+                                }
+                            })
+                            .collect();
+                    }
+                }
+            },
+            None => {
+                current_block.push(c);
             }
-        } else {
-            short_pointer += 1;
         }
-        long_pointer += 1;
     }
-    edit_count <= n
+
+    result.push(current_block);
+    result.concat()
 }
 
-pub fn one_edit_away(str: &str) -> Option<Color> {
-    Color::iter().find(|&color| n_edits_away(str, color.to_string().as_str(), 1))
-}
 #[cfg(test)]
 mod tests {
+    use crate::domain::algo_question::Instruction;
 
-    use super::generate_challenge;
-    use super::one_edit_away;
-    use super::Color;
+    use super::{generate_challenge, generate_random_case, parse_barcode};
 
     #[test]
     fn test_generate_challenge() {
-        let mandatory_cases: Vec<String> = vec![
-            String::from(""),
-            Color::Red.to_string(),
-            Color::Orange.to_string(),
-            Color::Yellow.to_string(),
-            Color::Green.to_string(),
-            Color::Blue.to_string(),
-            Color::Violet.to_string(),
-        ];
-        let n_mandatory = mandatory_cases.len();
-        let n_random = 10;
-        let challenge = generate_challenge(&String::from("001234567"), n_random, mandatory_cases);
+        let challenge = generate_challenge(3, vec!["1234567890".to_string()]);
+        assert_eq!(challenge.challenge.len(), 4);
+        assert_eq!(challenge.solution.len(), 4);
 
-        assert_eq!(challenge.challenge.len(), n_mandatory + n_random);
-
-        assert!(challenge
-            .solution
-            .iter()
-            .all(|soln| one_edit_away(soln).is_some()));
+        assert!(challenge.challenge.contains(&"1234567890".to_string()));
     }
 
     #[test]
-    fn test_one_edit_away_example() {
-        assert_eq!(one_edit_away("red").unwrap(), Color::Red);
-        assert_eq!(one_edit_away("lue").unwrap(), Color::Blue);
-        assert!(one_edit_away("ooran").is_none());
-        assert!(one_edit_away("abc").is_none());
-        assert_eq!(one_edit_away("greene").unwrap(), Color::Green);
+    fn test_parse_barcode_example() {
+        assert_eq!(parse_barcode("#12#34!#59^#67%#"), "1221430867");
+    }
+
+    #[test]
+    fn test_generated_challenge() {
+        let generated_case = generate_random_case(&mut rand::thread_rng());
+
+        assert_eq!(
+            generated_case.chars().next().unwrap(),
+            Instruction::BegEnd.to_string().chars().next().unwrap()
+        );
+        assert_eq!(
+            generated_case.chars().last().unwrap(),
+            Instruction::BegEnd.to_string().chars().next().unwrap()
+        );
+    }
+
+    #[test]
+    fn test_parse_barcode_edge() {
+        assert_eq!(parse_barcode("#12^!%%###34^#"), "1234");
     }
 }

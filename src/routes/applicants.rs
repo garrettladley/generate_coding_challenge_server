@@ -15,7 +15,7 @@ impl TryFrom<ApplicantsBodyData> for Nuids {
         let nuids = body
             .0
             .into_iter()
-            .filter_map(|nuid| match Nuid::parse(nuid.clone()) {
+            .filter_map(|nuid| match Nuid::parse(&nuid.clone()) {
                 Ok(parsed_nuid) => Some(parsed_nuid),
                 Err(_) => {
                     failed_parses.push(nuid);
@@ -97,8 +97,8 @@ pub async fn applicants(
             let mut returned_applicants = Vec::with_capacity(applicants.len());
 
             for applicant in applicants {
-                let nuid_result = Nuid::parse(applicant.nuid.clone());
-                let name_result = ApplicantName::parse(applicant.name.clone());
+                let nuid_result = Nuid::parse(&applicant.nuid);
+                let name_result = ApplicantName::parse(&applicant.name);
 
                 match (nuid_result, name_result) {
                     (Ok(nuid), Ok(name)) => {

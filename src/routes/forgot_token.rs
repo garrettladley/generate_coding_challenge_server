@@ -16,7 +16,7 @@ pub struct ForgotTokenResponseData {
     )
 )]
 pub async fn forgot_token(nuid: web::Path<String>, pool: web::Data<PgPool>) -> HttpResponse {
-    let nuid = match Nuid::parse(nuid.into_inner()) {
+    let nuid = match Nuid::parse(&nuid) {
         Ok(nuid) => nuid,
         Err(err) => {
             tracing::error!(err);
@@ -24,7 +24,7 @@ pub async fn forgot_token(nuid: web::Path<String>, pool: web::Data<PgPool>) -> H
         }
     };
     match retrieve_token(&pool, &nuid).await {
-        Ok(response_data) => HttpResponse::Ok().json(response_data),
+        Ok(response_data) => HttpResponse::Ok().body(response_data.token),
         Err(sqlx::Error::RowNotFound) => {
             tracing::error!(
                 "Record associated with given NUID not found! NUID: {}",

@@ -10,7 +10,7 @@ impl std::fmt::Display for Nuid {
 }
 
 impl Nuid {
-    pub fn parse(s: String) -> Result<Nuid, String> {
+    pub fn parse(s: &str) -> Result<Nuid, String> {
         let is_empty_or_whitespace = s.trim().is_empty();
 
         let is_too_long = s.graphemes(true).count() > 9;
@@ -20,7 +20,7 @@ impl Nuid {
         if is_empty_or_whitespace || is_too_long || !all_integers {
             Err(format!("Invalid NUID! Given: {}", s))
         } else {
-            Ok(Self(s))
+            Ok(Self(s.to_string()))
         }
     }
 }
@@ -38,49 +38,44 @@ mod tests {
 
     #[test]
     fn a_9_grapheme_long_all_int_nuid_is_valid() {
-        let nuid = "1".repeat(9);
-        assert_ok!(Nuid::parse(nuid));
+        assert_ok!(Nuid::parse("0".repeat(9).as_str()));
     }
 
     #[test]
     fn whitespace_only_is_rejected() {
-        let nuid = " ".to_string();
-        assert_err!(Nuid::parse(nuid));
+        assert_err!(Nuid::parse(" "));
     }
 
     #[test]
     fn empty_string_is_rejected() {
-        let nuid = "".to_string();
-        assert_err!(Nuid::parse(nuid));
+        assert_err!(Nuid::parse(""));
     }
 
     #[test]
     fn a_10_grapheme_long_all_int_nuid_is_rejected() {
-        let nuid = "1".repeat(10);
-        assert_err!(Nuid::parse(nuid));
+        assert_err!(Nuid::parse("0".repeat(10).as_str()));
     }
 
     #[test]
     fn a_9_grapheme_long_all_string_nuid_is_rejected() {
-        let nuid = "a".repeat(9);
-        assert_err!(Nuid::parse(nuid));
+        assert_err!(Nuid::parse("a".repeat(9).as_str()));
     }
 
     #[test]
     fn a_9_grapheme_long_string_with_1_to_8_ints_is_rejected() {
-        let characters = ['1', 'a'];
+        let characters = ['0', 'a'];
 
         for num_a in 1..=8 {
             let permutation = vec!['a'; num_a];
             let permutation_string = permutation.iter().collect::<String>();
-            let full_string = format!("{}{}", permutation_string, &"11111111"[..8 - num_a]);
+            let full_string = format!("{}{}", permutation_string, &"00000000"[..8 - num_a]);
 
             for i in 0..9 {
                 for char in &characters {
                     let mut test_string = full_string.clone();
                     test_string.insert(i, *char);
                     assert_err!(
-                        Nuid::parse(test_string.clone()),
+                        Nuid::parse(test_string.as_str()),
                         "The call to Nuid parse should have failed with the string: {}",
                         test_string
                     );

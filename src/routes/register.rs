@@ -1,6 +1,6 @@
 use std::time::SystemTime;
 
-use crate::domain::{generate_challenge, ApplicantName, Color, Nuid, RegisterApplicant};
+use crate::domain::{generate_challenge, ApplicantName, Nuid, RegisterApplicant};
 
 use actix_web::{web, HttpResponse};
 use chrono::{DateTime, Utc};
@@ -17,8 +17,8 @@ impl TryFrom<BodyData> for RegisterApplicant {
     type Error = String;
 
     fn try_from(body: BodyData) -> Result<Self, Self::Error> {
-        let name = ApplicantName::parse(body.name)?;
-        let nuid = Nuid::parse(body.nuid)?;
+        let name = ApplicantName::parse(&body.name)?;
+        let nuid = Nuid::parse(&body.nuid)?;
         Ok(RegisterApplicant { name, nuid })
     }
 }
@@ -75,16 +75,12 @@ pub async fn insert_applicant(
     let registration_time: DateTime<Utc> = SystemTime::now().into();
     let token = Uuid::new_v4();
     let challenge = generate_challenge(
-        register_applicant.nuid.as_ref(),
-        100,
+        256,
         vec![
             String::from(""),
-            Color::Red.to_string(),
-            Color::Orange.to_string(),
-            Color::Yellow.to_string(),
-            Color::Green.to_string(),
-            Color::Blue.to_string(),
-            Color::Violet.to_string(),
+            String::from("#12#34!#59^#67%#"),
+            String::from("#12^!%%###34^#"),
+            String::from("##"),
         ],
     );
 

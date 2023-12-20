@@ -12,6 +12,29 @@ pub struct Challenge {
     pub solution: Vec<String>,
 }
 
+pub fn generate_challenge(n_random: usize, mandatory_cases: Vec<String>) -> Challenge {
+    let mut rng = rand::thread_rng();
+    let random_cases = (0..n_random)
+        .map(|_| generate_random_case(&mut rng))
+        .collect::<Vec<String>>();
+
+    let mut challenge = mandatory_cases;
+
+    challenge.extend(random_cases);
+
+    challenge.shuffle(&mut rng);
+
+    let solution = challenge
+        .iter()
+        .map(|case| parse_barcode(case))
+        .collect::<Vec<String>>();
+
+    Challenge {
+        challenge,
+        solution,
+    }
+}
+
 #[derive(strum::EnumIter, Default, Debug)]
 enum Instruction {
     #[default]
@@ -44,40 +67,17 @@ impl Instruction {
     }
 }
 
-pub fn generate_challenge(n_random: usize, mandatory_cases: Vec<String>) -> Challenge {
-    let mut rng = rand::thread_rng();
-    let random_cases = (0..n_random)
-        .map(|_| generate_random_case(&mut rng))
-        .collect::<Vec<String>>();
-
-    let mut all_cases = mandatory_cases;
-
-    all_cases.extend(random_cases);
-
-    all_cases.shuffle(&mut rng);
-
-    let answers = all_cases
-        .iter()
-        .map(|case| parse_barcode(case))
-        .collect::<Vec<String>>();
-
-    Challenge {
-        challenge: all_cases,
-        solution: answers,
-    }
-}
-
 fn generate_random_case(rng: &mut impl Rng) -> String {
-    let string_length = rng.gen_range(32..=64);
+    let num_numeric = rng.gen_range(32..=64);
     let num_instructions = rng.gen_range(16..=32);
 
     let mut result = Instruction::BegEnd.to_string();
 
-    result += &(0..string_length)
+    result += &(0..num_numeric)
         .map(|_| rng.gen_range(0..=9).to_string())
         .collect::<String>();
 
-    let mut instruction_positions: Vec<usize> = (1..string_length).collect();
+    let mut instruction_positions: Vec<usize> = (1..num_numeric).collect();
     instruction_positions.shuffle(rng);
     instruction_positions.truncate(num_instructions);
     instruction_positions.sort_unstable();
@@ -103,43 +103,41 @@ pub fn parse_barcode(barcode: &str) -> String {
     let mut current_block = String::new();
     let mut previous_block = String::new();
 
-    for c in barcode.chars() {
-        match Instruction::parse(&c) {
-            Some(instrunction) => match instrunction {
-                Instruction::BegEnd => {
-                    result.push(current_block.clone());
-                    previous_block = current_block.clone();
-                    current_block.clear();
-                }
-                Instruction::Repeat => {
-                    current_block += &previous_block;
-                }
-                Instruction::Reverse => {
-                    if let Some(last) = result.last_mut() {
-                        *last = last.chars().rev().collect();
-                    }
-                }
-                Instruction::Encrypt => {
-                    if let Some(last) = result.last_mut() {
-                        *last = last
-                            .chars()
-                            .map(|d| {
-                                if d == '0' {
-                                    '0'
-                                } else {
-                                    std::char::from_digit((d.to_digit(10).unwrap() * 2) % 10, 10)
-                                        .unwrap()
-                                }
-                            })
-                            .collect();
-                    }
-                }
-            },
-            None => {
-                current_block.push(c);
+    barcode.chars().for_each(|c| match Instruction::parse(&c) {
+        Some(instrunction) => match instrunction {
+            Instruction::BegEnd => {
+                result.push(current_block.clone());
+                previous_block = current_block.clone();
+                current_block.clear();
             }
+            Instruction::Repeat => {
+                current_block += &previous_block;
+            }
+            Instruction::Reverse => {
+                if let Some(last) = result.last_mut() {
+                    *last = last.chars().rev().collect();
+                }
+            }
+            Instruction::Encrypt => {
+                if let Some(last) = result.last_mut() {
+                    *last = last
+                        .chars()
+                        .map(|d| {
+                            if d == '0' {
+                                '0'
+                            } else {
+                                std::char::from_digit((d.to_digit(10).unwrap() * 2) % 10, 10)
+                                    .unwrap()
+                            }
+                        })
+                        .collect();
+                }
+            }
+        },
+        None => {
+            current_block.push(c);
         }
-    }
+    });
 
     result.push(current_block);
     result.concat()
@@ -161,12 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_barcode_example() {
-        assert_eq!(parse_barcode("#12#34!#59^#67%#"), "1221430867");
-    }
-
-    #[test]
-    fn test_generated_challenge() {
+    fn test_generated_random_case() {
         let generated_case = generate_random_case(&mut rand::thread_rng());
 
         assert_eq!(
@@ -177,6 +170,11 @@ mod tests {
             generated_case.chars().last().unwrap(),
             Instruction::BegEnd.to_string().chars().next().unwrap()
         );
+    }
+
+    #[test]
+    fn test_parse_barcode_example() {
+        assert_eq!(parse_barcode("#12#34!#59^#67%#"), "1221430867");
     }
 
     #[test]

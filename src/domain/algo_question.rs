@@ -145,9 +145,9 @@ pub fn parse_barcode(barcode: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::algo_question::Instruction;
-
-    use super::{generate_challenge, generate_random_case, parse_barcode};
+    use crate::domain::algo_question::{
+        generate_challenge, generate_random_case, parse_barcode, Instruction,
+    };
 
     #[test]
     fn test_generate_challenge() {

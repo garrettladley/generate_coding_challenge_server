@@ -348,7 +348,10 @@ async fn applicants_when_submit_correct_then_incorrect_results_in_incorrect() {
     let token = response.token;
     let challenge = response.challenge;
 
-    let solution = challenge.iter().map(|case| parse_barcode(case)).collect;
+    let solution = challenge
+        .iter()
+        .map(|case| parse_barcode(case))
+        .collect::<Vec<String>>();
 
     let solution_json: serde_json::Value = serde_json::Value::Array(
         solution

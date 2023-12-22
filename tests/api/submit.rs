@@ -31,7 +31,6 @@ async fn submit_returns_a_200_for_correct_solution() {
     let solution = challenge
         .iter()
         .map(|case| parse_barcode(case))
-        .map(|color| color.to_string())
         .collect::<Vec<String>>();
 
     let solution_json: serde_json::Value = serde_json::Value::Array(
@@ -190,11 +189,7 @@ async fn submit_correct_then_incorrect_results_in_incorrect() {
         .filter_map(|value| value.as_str().map(String::from))
         .collect();
 
-    let solution = challenge
-        .iter()
-        .map(|case| parse_barcode(case))
-        .map(|color| color.to_string())
-        .collect::<Vec<String>>();
+    let solution = challenge.iter().map(|case| parse_barcode(case)).collect();
 
     let solution_json: serde_json::Value = serde_json::Value::Array(
         solution

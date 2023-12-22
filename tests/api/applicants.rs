@@ -25,7 +25,6 @@ async fn applicants_returns_a_200_for_valid_nuids_that_exist() {
     let solution = challenge
         .iter()
         .map(|case| parse_barcode(case))
-        .map(|color| color.to_string())
         .collect::<Vec<String>>();
 
     let solution_json: serde_json::Value = serde_json::Value::Array(
@@ -173,7 +172,6 @@ async fn applicants_returns_a_404_for_a_mix_of_valid_nuids_that_do_and_dont_exis
     let solution = challenge
         .iter()
         .map(|case| parse_barcode(case))
-        .map(|color| color.to_string())
         .collect::<Vec<String>>();
 
     let solution_json: serde_json::Value = serde_json::Value::Array(
@@ -350,11 +348,7 @@ async fn applicants_when_submit_correct_then_incorrect_results_in_incorrect() {
     let token = response.token;
     let challenge = response.challenge;
 
-    let solution = challenge
-        .iter()
-        .map(|case| parse_barcode(case))
-        .map(|color| color.to_string())
-        .collect::<Vec<String>>();
+    let solution = challenge.iter().map(|case| parse_barcode(case)).collect;
 
     let solution_json: serde_json::Value = serde_json::Value::Array(
         solution
